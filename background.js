@@ -1,64 +1,65 @@
 /**
- * Jira 時間記錄擴展的背景腳本
- * 處理與 Jira API 的通信
- */
-
-// Jira API 配置
-const defaultConfig = {
-  jiraDomain: 'https://kkday.atlassian.net/',
-  email: 'jamie.lin@kkday.com',
-  apiToken: 'ATATT3xFfGF0GsqYIJE3TfZWkKzOdbtgUv-oFwc1qM9NUD8vZZa798VJKeomZs52Vt8iV8huI3x1J-XmmvdSWbBPtlZAoizhnT3Bo33sIU3upQOw7_4sehCUS_rr8BX9W79lnsr_LXb3_eE7gZhzg-9I7iKqHU_rbf2TTys5JrBrCYVE-70Czrg=9983FDAF'
-};
-
-/**
- * 處理來自 content script 的消息
+ * 監聽來自 content script 的訊息
+ * 處理時間記錄的請求
  */
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message.action === 'logTime') {
     const { jiraKey, time } = message;
 
-    fetch(`${defaultConfig.jiraDomain}/rest/api/3/issue/${jiraKey}/worklog`, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Basic ${btoa(`${defaultConfig.email}:${defaultConfig.apiToken}`)}`,
-        'Accept': 'application/json',
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        timeSpent: time,
-        comment: {
-          type: "doc",
-          version: 1,
-          content: [
-            {
-              type: "paragraph",
-              content: [
-                {
-                  type: "text",
-                  text: "Logged from Chrome Extension"
-                }
-              ]
-            }
-          ]
+    // 從 Chrome 儲存空間獲取 Jira 設定
+    chrome.storage.sync.get(['jiraDomain', 'email', 'apiToken'], (config) => {
+      const { jiraDomain, email, apiToken } = {
+        jiraDomain: config.jiraDomain || 'https://kkday.atlassian.net/',
+        email: config.email,
+        apiToken: config.apiToken
+      };
+
+      // 檢查設定是否完整
+      if (!email || !apiToken) {
+        sendResponse({ success: false, error: '請先在擴充功能設定頁填寫 Jira Email 與 API Token' });
+        return;
+      }
+
+      // 發送 API 請求到 Jira
+      fetch(`${jiraDomain}/rest/api/3/issue/${jiraKey}/worklog`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Basic ${btoa(`${email}:${apiToken}`)}`,
+          'Accept': 'application/json',
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          timeSpent: time,
+          comment: {
+            type: "doc",
+            version: 1,
+            content: [
+              {
+                type: "paragraph",
+                content: [
+                  {
+                    type: "text",
+                    text: "Logged from Chrome Extension"
+                  }
+                ]
+              }
+            ]
+          }
+        })
+      })
+      .then(async res => {
+        const json = await res.json();
+        if (!res.ok) {
+          sendResponse({ success: false, error: json });
+        } else {
+          sendResponse({ success: true, data: json });
         }
       })
-    })
-    .then(async res => {
-      const json = await res.json();
-      if (!res.ok) {
-        console.error('Jira API Error:', res.status, json);
-        sendResponse({ success: false, error: json });
-      } else {
-        console.log('Time logged successfully:', json);
-        sendResponse({ success: true, data: json });
-      }
-    })
-    .catch(err => {
-      console.error('Error logging time:', err);
-      sendResponse({ success: false, error: err.message });
+      .catch(err => {
+        sendResponse({ success: false, error: err.message });
+      });
     });
 
-    // 返回 true 表示我們將異步發送響應
-    return true;
+    return true; // 保持訊息通道開啟，等待非同步回應
   }
 });
