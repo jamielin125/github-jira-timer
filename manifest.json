@@ -1,0 +1,23 @@
+{
+    "manifest_version": 3,
+    "name": "GitHub PR to Jira Time Logger",
+    "version": "1.0",
+    "description": "Detect Jira key in GitHub PR and log time via Jira API.",
+    "permissions": ["activeTab", "scripting", "storage"],
+    "host_permissions": ["https://github.com/*", "https://kkday.atlassian.net/*"],
+    "content_scripts": [
+      {
+        "matches": ["https://github.com/*/pull/*"],
+        "js": ["content.js"]
+      }
+    ],
+    "action": {
+      "default_popup": "popup.html",
+      "default_icon": {
+        "16": "icon.png"
+      }
+    },
+    "background": {
+        "service_worker": "background.js"
+    }
+  }
