@@ -2,6 +2,11 @@
     "manifest_version": 3,
     "name": "GitHub PR to Jira Time Logger",
     "version": "1.0",
+    "icons": {
+      "16": "icon.png",
+      "48": "icon.png",
+      "128": "icon.png"
+    },
     "description": "Detect Jira key in GitHub PR and log time via Jira API.",
     "permissions": ["activeTab", "scripting", "storage"],
     "host_permissions": ["https://github.com/*", "https://kkday.atlassian.net/*"],
@@ -15,7 +20,8 @@
       "default_popup": "popup.html",
       "default_icon": {
         "16": "icon.png"
-      }
+      },
+      "default_title": "Log time to Jira"
     },
     "background": {
         "service_worker": "background.js"
