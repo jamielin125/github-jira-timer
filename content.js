@@ -1,34 +1,16 @@
-/**
- * Jira 時間記錄擴展的內容腳本
- * 負責在頁面上插入 UI 並處理用戶交互
- */
-
-/**
- * 從文本中提取 Jira Key
- * @param {string} text - 要搜索的文本
- * @returns {string|null} - 找到的 Jira Key 或 null
- */
 function extractJiraKey(text) {
   const match = text.match(/\[?([A-Z0-9]+-\d+)\]?/);
   return match ? match[1] : null;
 }
 
-/**
- * 在頁面上查找 Jira Key
- * @returns {string|null} - 找到的 Jira Key 或 null
- */
 function findJiraKey() {
   const title = document.querySelector('.js-issue-title')?.textContent || '';
   const branch = document.querySelector('[data-testid="head-ref"]')?.textContent || '';
   return extractJiraKey(title) || extractJiraKey(branch);
 }
 
-/**
- * 在頁面上插入時間記錄 UI
- * @param {string} jiraKey - 要記錄時間的 Jira Key
- */
 function insertUI(jiraKey) {
-  if (!jiraKey) return;
+  if (!jiraKey || document.getElementById('jira-time-tracker')) return;
 
   const container = document.createElement('div');
   container.id = 'jira-time-tracker';
@@ -72,10 +54,34 @@ function insertUI(jiraKey) {
   });
 }
 
-// 初始化
-const jiraKey = findJiraKey();
-if (jiraKey) {
-  insertUI(jiraKey);
+function removeUI() {
+  const existing = document.getElementById('jira-time-tracker');
+  if (existing) existing.remove();
 }
+
+function isPullRequestPage() {
+  return location.pathname.match(/^\/[^/]+\/[^/]+\/pull\/\d+/);
+}
+
+function updateUI() {
+  if (isPullRequestPage()) {
+    const jiraKey = findJiraKey();
+    if (jiraKey) insertUI(jiraKey);
+  } else {
+    removeUI();
+  }
+}
+
+// 初始化
+let lastUrl = location.href;
+updateUI(); // 初次執行
+
+// 監聽 URL 變化（GitHub 是 SPA）
+setInterval(() => {
+  if (location.href !== lastUrl) {
+    lastUrl = location.href;
+    updateUI();
+  }
+}, 1500);
 
 console.log('[Jira Logger] Content script loaded!');
