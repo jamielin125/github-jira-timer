@@ -1,75 +1,203 @@
 /**
- * 從文字中提取 Jira 問題編號
- * @param {string} text - 要搜尋的文字
- * @returns {string|null} - 找到的 Jira 問題編號，如果沒有找到則返回 null
+ * 偵測並設定 dark mode class
  */
-function extractJiraKey(text) {
-  const match = text.match(/\[?([A-Z0-9]+-\d+)\]?/);
-  return match ? match[1] : null;
+function applyDarkModeClass() {
+  const dark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+  document.documentElement.classList.toggle('dark', dark);
 }
 
 /**
- * 在頁面中尋找 Jira 問題編號
- * 優先從標題中尋找，如果沒有則從分支名稱中尋找
- * @returns {string|null} - 找到的 Jira 問題編號，如果沒有找到則返回 null
+ * 注入基本樣式（light + dark）
  */
-function findJiraKey() {
+function injectStyles() {
+  if (document.getElementById('jira-style-block')) return;
+
+  const style = document.createElement('style');
+  style.id = 'jira-style-block';
+  style.textContent = `
+    #jira-config-form,
+    #jira-time-tracker,
+    .jira-toast {
+      font-family: sans-serif;
+      background: white;
+      color: black;
+      border: 1px solid #ccc;
+    }
+
+    .dark #jira-config-form,
+    .dark #jira-time-tracker,
+    .dark .jira-toast {
+      background: #2c2c2c;
+      color: #f0f0f0;
+      border-color: #444;
+    }
+
+    #jira-config-form input,
+    #jira-config-form input::placeholder,
+    #jira-time-tracker input {
+      background: white;
+      color: black;
+      border: 1px solid #ccc;
+    }
+
+    .dark #jira-config-form input,
+    .dark #jira-config-form input::placeholder,
+    .dark #jira-time-tracker input {
+      background: #444;
+      color: #fff;
+      border: 1px solid #666;
+    }
+
+    .jira-toast {
+      position: fixed;
+      top: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      padding: 12px 20px;
+      border-radius: 4px;
+      z-index: 10001;
+      font-size: 14px;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+    }
+
+    .jira-toast.info {
+      background-color: #4caf50;
+    }
+
+    .jira-toast.error {
+      background-color: #f44336;
+    }
+
+    .dark .jira-toast.info {
+      background-color: #357a38;
+    }
+
+    .dark .jira-toast.error {
+      background-color: #c62828;
+    }
+  `;
+  document.head.appendChild(style);
+}
+
+/**
+ * 從文字中提取 Jira 問題編號
+ */
+function extractJiraKey(text, regexPattern) {
+  try {
+    const regex = new RegExp(regexPattern);
+    const match = text.match(regex);
+    return match ? match[0] : null;
+  } catch (error) {
+    showToast('無效的正則表達式', 'error');
+    return null;
+  }
+}
+
+/**
+ * 優先從標題，次從分支名稱中找 Jira Key
+ */
+function findJiraKey(regexPattern) {
   const title = document.querySelector('.js-issue-title')?.textContent || '';
   const branch = document.querySelector('[data-testid="head-ref"]')?.textContent || '';
-  return extractJiraKey(title) || extractJiraKey(branch);
+  return extractJiraKey(title, regexPattern) || extractJiraKey(branch, regexPattern);
 }
 
 /**
- * 創建 Jira 設定表單
- * 包含 domain、email 和 API token 的輸入欄位
+ * 顯示提示訊息（toast）
+ */
+function showToast(message, type = 'info') {
+  const toast = document.createElement('div');
+  toast.textContent = message;
+  toast.className = `jira-toast ${type}`;
+  document.body.appendChild(toast);
+  setTimeout(() => toast.remove(), 3000);
+}
+
+/**
+ * 建立 Jira 設定表單
  */
 function createSettingForm() {
   if (document.getElementById('jira-config-form')) return;
+
 
   const container = document.createElement('div');
   container.id = 'jira-config-form';
   container.style = `
     position: fixed;
-    top: 10px;
+    top: 50px;
     right: 10px;
-    background: white;
-    border: 1px solid #ccc;
-    padding: 10px;
     z-index: 10000;
-    width: 280px;
-    box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+    width: 300px;
+    padding: 15px;
   `;
 
   container.innerHTML = `
-    <h4 style="margin: 0 0 8px;">設定 Jira 資訊</h4>
-    <input id="jiraDomain" placeholder="Jira Domain" style="width: 100%; margin-bottom: 5px;" value="https://kkday.atlassian.net/" />
-    <input id="email" placeholder="Email" style="width: 100%; margin-bottom: 5px;" />
-    <input id="apiToken" placeholder="API Token" type="password" style="width: 100%; margin-bottom: 10px;" />
-    <button id="saveJiraConfig" style="width: 100%;">儲存設定</button>
+    <h4 style="margin-top: 0">設定 Jira 資訊</h4>
+    <form id="jira-form">
+      <label for="jiraDomain">Jira 網域</label>
+      <input id="jiraDomain" placeholder="https://yourdomain.atlassian.net" style="width: 100%; margin-bottom: 10px;" />
+
+      <label for="email">Email</label>
+      <input id="email" type="email" placeholder="你的帳號 Email" style="width: 100%; margin-bottom: 10px;" />
+
+      <label for="apiToken">API Token</label>
+      <input id="apiToken" type="password" placeholder="你的 API Token" style="width: 100%; margin-bottom: 10px;" />
+
+      <label for="jiraKeyRegex">Jira Key Regex</label>
+      <input id="jiraKeyRegex" placeholder="例如 KB2CW-\\d+" style="width: 100%; margin-bottom: 5px;" value="" />
+      <div style="font-size: 11px; margin-bottom: 10px; color: #666;">
+        例：KB2CW-\\d+，或自訂團隊專案代號格式
+      </div>
+
+      <div style="display: flex; justify-content: space-between;">
+        <button type="submit" style="width: 48%;">儲存</button>
+        <button type="button" id="cancelSetting" style="width: 48%;">取消</button>
+      </div>
+    </form>
   `;
 
   document.body.appendChild(container);
+  chrome.storage.sync.get(['jiraDomain', 'email', 'apiToken', 'jiraKeyRegex'], (config) => {
+    if (config.jiraDomain) document.getElementById('jiraDomain').value = config.jiraDomain;
+    if (config.email) document.getElementById('email').value = config.email;
+    if (config.apiToken) document.getElementById('apiToken').value = config.apiToken;
+    if (config.jiraKeyRegex) document.getElementById('jiraKeyRegex').value = config.jiraKeyRegex;
+  });
 
-  document.getElementById('saveJiraConfig').addEventListener('click', () => {
+  // 儲存按鈕處理
+  document.getElementById('jira-form').addEventListener('submit', (e) => {
+    e.preventDefault();
+
     const jiraDomain = document.getElementById('jiraDomain').value.trim();
     const email = document.getElementById('email').value.trim();
     const apiToken = document.getElementById('apiToken').value.trim();
+    const jiraKeyRegex = document.getElementById('jiraKeyRegex').value.trim();
 
-    if (!jiraDomain || !email || !apiToken) {
-      alert('請填寫完整資訊');
+    if (!jiraDomain || !email || !apiToken || !jiraKeyRegex) {
+      showToast('請填寫完整資訊', 'error');
       return;
     }
 
-    chrome.storage.sync.set({ jiraDomain, email, apiToken }, () => {
-      alert('設定已儲存，請重新整理頁面');
+    try {
+      new RegExp(jiraKeyRegex);
+    } catch (e) {
+      showToast('無效的正則表達式格式', 'error');
+      return;
+    }
+
+    chrome.storage.sync.set({ jiraDomain, email, apiToken, jiraKeyRegex }, () => {
+      showToast('設定儲存成功！請重新整理頁面');
       container.remove();
     });
+  });
+
+  document.getElementById('cancelSetting').addEventListener('click', () => {
+    container.remove();
   });
 }
 
 /**
- * 插入時間記錄介面
- * @param {string} jiraKey - Jira 問題編號
+ * 插入 Jira 時間記錄介面
  */
 function insertLogTimeUI(jiraKey) {
   if (!jiraKey || document.getElementById('jira-time-tracker')) return;
@@ -80,17 +208,17 @@ function insertLogTimeUI(jiraKey) {
     position: fixed;
     top: 10px;
     right: 10px;
-    background: white;
-    border: 1px solid #ccc;
-    padding: 8px;
     z-index: 9999;
-    box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+    padding: 8px;
   `;
 
   container.innerHTML = `
     <div>Jira Key: <strong>${jiraKey}</strong></div>
-    <input id="time-input" placeholder="e.g. 2h 30m" />
-    <button id="log-time">Log Time</button>
+    <input id="time-input" placeholder="e.g. 2h 30m" style="width: 100%; margin-top: 5px;" />
+    <div style="margin-top: 5px;">
+      <button id="log-time">記錄時間</button>
+      <button id="open-settings" style="margin-left: 5px; font-size: 12px;">設定</button>
+    </div>
   `;
 
   document.body.appendChild(container);
@@ -98,18 +226,24 @@ function insertLogTimeUI(jiraKey) {
   document.getElementById('log-time').addEventListener('click', () => {
     const time = document.getElementById('time-input').value;
     if (!time) {
-      alert('請輸入時間');
+      showToast('請輸入時間', 'error');
       return;
     }
 
     chrome.runtime.sendMessage({ action: 'logTime', jiraKey, time }, (response) => {
       if (response?.success) {
-        alert('時間記錄成功！');
+        showToast('時間記錄成功！');
         document.getElementById('time-input').value = '';
       } else {
-        alert(`記錄失敗: ${response?.error || '未知錯誤'}`);
+        const errorMsg = response?.error?.errorMessages?.join('\n') || JSON.stringify(response?.error) || '未知錯誤';
+        showToast(`記錄失敗: ${errorMsg}`, 'error');
       }
     });
+  });
+
+  document.getElementById('open-settings').addEventListener('click', () => {
+    removeUI();
+    createSettingForm();
   });
 }
 
@@ -123,37 +257,52 @@ function removeUI() {
 
 /**
  * 檢查當前頁面是否為 Pull Request 頁面
- * @returns {boolean} - 如果是 Pull Request 頁面則返回 true
  */
 function isPullRequestPage() {
   return location.pathname.match(/^\/[^/]+\/[^/]+\/pull\/\d+/);
 }
 
-/**
- * 更新頁面 UI
- * 根據當前頁面狀態和設定顯示相應的介面
- */
 function updateUI() {
   removeUI();
 
   if (isPullRequestPage()) {
-    chrome.storage.sync.get(['jiraDomain', 'email', 'apiToken'], (config) => {
+    chrome.storage.sync.get(['jiraDomain', 'email', 'apiToken', 'jiraKeyRegex'], (config) => {
       const isConfigComplete = config.jiraDomain && config.email && config.apiToken;
       if (!isConfigComplete) {
         createSettingForm();
       } else {
-        const jiraKey = findJiraKey();
+        const jiraKey = findJiraKey(config.jiraKeyRegex);
         if (jiraKey) insertLogTimeUI(jiraKey);
+        else {
+          const warn = document.createElement('div');
+          warn.id = 'jira-time-tracker';
+          warn.style = `
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            padding: 8px;
+            z-index: 9999;
+          `;
+          warn.innerHTML = `
+            <div>找不到符合格式的 Jira Key</div>
+            <button id="open-settings">修改設定</button>
+          `;
+          document.body.appendChild(warn);
+          document.getElementById('open-settings').addEventListener('click', () => {
+            removeUI();
+            createSettingForm();
+          });
+        }
       }
-    });
+    });``
   }
 }
 
-// 初始化
 let lastUrl = location.href;
+applyDarkModeClass();
+injectStyles();
 updateUI();
 
-// 監聽 URL 變化，當 URL 改變時更新 UI
 setInterval(() => {
   if (location.href !== lastUrl) {
     lastUrl = location.href;
