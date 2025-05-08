@@ -8,7 +8,7 @@
       "128": "icon.png"
     },
     "description": "Detect Jira key in GitHub PR and log time via Jira API.",
-    "permissions": ["activeTab", "scripting", "storage"],
+    "permissions": ["storage"],
     "host_permissions": ["https://github.com/*", "https://kkday.atlassian.net/*"],
     "content_scripts": [
       {

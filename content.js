@@ -98,7 +98,7 @@ function extractJiraKey(text, regexPattern) {
  */
 function findJiraKey(regexPattern) {
   const title = document.querySelector('.js-issue-title')?.textContent || '';
-  const branch = document.querySelector('[data-testid="head-ref"]')?.textContent || '';
+  const branch = document.querySelector('.commit-ref.head-ref a')?.textContent || '';
   return extractJiraKey(title, regexPattern) || extractJiraKey(branch, regexPattern);
 }
 
