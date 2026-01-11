@@ -1,3 +1,4 @@
-node_modules/
-.claude/
-dist/
+node_modules
+.claude
+dist
+.DS_Store
