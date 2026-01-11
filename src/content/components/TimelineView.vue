@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
 import type { TimeSegment } from '@/types'
+import IconTimer from './icons/IconTimer.vue'
+import IconPause from './icons/IconPause.vue'
 
 const props = defineProps<{
   segments: TimeSegment[]
@@ -50,7 +52,8 @@ function formatDuration(start: number, end: number): string {
   <div class="timeline-view">
     <!-- Summary row -->
     <div class="summary" @click="expanded = !expanded">
-      <span class="time-icon">{{ isTracking ? '⏱' : '⏸' }}</span>
+      <IconTimer v-if="isTracking" class="time-icon" />
+      <IconPause v-else class="time-icon" />
       <span class="total-time">{{ totalTime }}</span>
       <button type="button" class="expand-btn">
         {{ expanded ? '▲' : '▼' }}
@@ -117,7 +120,9 @@ function formatDuration(start: number, end: number): string {
 }
 
 .time-icon {
-  font-size: 14px;
+  width: 16px;
+  height: 16px;
+  color: #666;
 }
 
 .total-time {
@@ -230,6 +235,10 @@ function formatDuration(start: number, end: number): string {
     border-color: #444;
   }
 
+  .time-icon {
+    color: #999;
+  }
+
   .total-time {
     color: #e0e0e0;
   }
@@ -256,6 +265,22 @@ function formatDuration(start: number, end: number): string {
 
   .tooltip-type {
     color: #e0e0e0;
+  }
+
+  .tooltip-time {
+    color: #999;
+  }
+
+  .tooltip-duration {
+    color: #777;
+  }
+
+  .legend {
+    color: #999;
+  }
+
+  .empty {
+    color: #777;
   }
 }
 </style>

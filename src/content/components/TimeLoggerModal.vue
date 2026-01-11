@@ -287,6 +287,10 @@ button:disabled {
     border-color: #444;
   }
 
+  .drag-hint {
+    color: #666;
+  }
+
   .jira-key {
     color: #4c9aff;
   }
@@ -301,17 +305,35 @@ button:disabled {
     color: #e0e0e0;
   }
 
+  input::placeholder {
+    color: #666;
+  }
+
+  input:focus {
+    border-color: #4c9aff;
+  }
+
   input.auto-time {
     background: #3a3a3c;
     color: #e0e0e0;
   }
 
+  button {
+    background: #0066ff;
+  }
+
+  button:hover:not(:disabled) {
+    background: #0055dd;
+  }
+
   .message.success {
     background: #1a3a2a;
+    color: #36b37e;
   }
 
   .message.error {
     background: #3a1a1a;
+    color: #ff5630;
   }
 }
 </style>

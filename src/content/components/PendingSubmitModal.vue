@@ -352,12 +352,28 @@ function handleDelete() {
 
 /* Dark mode */
 @media (prefers-color-scheme: dark) {
+  .overlay {
+    background: rgba(0, 0, 0, 0.7);
+  }
+
   .modal {
     background: #2c2c2c;
   }
 
   .header {
     border-color: #444;
+  }
+
+  .header h3 {
+    color: #e0e0e0;
+  }
+
+  .close-btn {
+    color: #888;
+  }
+
+  .close-btn:hover {
+    color: #ccc;
   }
 
   .select-all {
@@ -377,8 +393,20 @@ function handleDelete() {
     color: #4c9aff;
   }
 
+  .time {
+    color: #e0e0e0;
+  }
+
+  .date {
+    color: #888;
+  }
+
   .footer {
     border-color: #444;
+  }
+
+  .total {
+    color: #999;
   }
 
   .delete-btn {
@@ -397,6 +425,14 @@ function handleDelete() {
 
   .cancel-btn:hover {
     background: #555;
+  }
+
+  .submit-btn {
+    background: #0066ff;
+  }
+
+  .submit-btn:hover:not(:disabled) {
+    background: #0055dd;
   }
 }
 </style>

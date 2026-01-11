@@ -273,7 +273,10 @@ describe('TimelineView', () => {
         }
       })
 
-      expect(wrapper.find('.time-icon').text()).toBe('⏱')
+      // SVG icon 應存在且包含 circle 元素（計時器圖示）
+      const icon = wrapper.find('.time-icon')
+      expect(icon.exists()).toBe(true)
+      expect(icon.find('circle').exists()).toBe(true)
     })
 
     it('暫停時應顯示暫停圖示', () => {
@@ -285,7 +288,10 @@ describe('TimelineView', () => {
         }
       })
 
-      expect(wrapper.find('.time-icon').text()).toBe('⏸')
+      // SVG icon 應存在且包含 rect 元素（暫停圖示）
+      const icon = wrapper.find('.time-icon')
+      expect(icon.exists()).toBe(true)
+      expect(icon.find('rect').exists()).toBe(true)
     })
   })
 

@@ -2,10 +2,11 @@ import { ref, type Ref } from 'vue'
 import type { Settings, ModalPosition } from '@/types'
 
 const DEFAULT_SETTINGS: Settings = {
-  jiraDomain: '',
+  jiraDomain: 'https://kkday.atlassian.net/',
   email: '',
   apiToken: '',
-  jiraKeyRegex: '[A-Z]+-\\d+'
+  // 支援的專案前綴：KQT, KB2CW（需要新增專案時在此擴充）
+  jiraKeyRegex: '(KQT|KB2CW)-\\d+'
 }
 
 export function useSettings() {

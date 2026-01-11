@@ -49,7 +49,7 @@ async function handleSave() {
           id="jiraDomain"
           v-model="settings.jiraDomain"
           type="url"
-          placeholder="https://your-domain.atlassian.net"
+          placeholder="https://kkday.atlassian.net/"
         />
       </div>
 
@@ -59,7 +59,7 @@ async function handleSave() {
           id="email"
           v-model="settings.email"
           type="email"
-          placeholder="your-email@example.com"
+          placeholder="your-email@kkday.com"
         />
       </div>
 
@@ -69,8 +69,15 @@ async function handleSave() {
           id="apiToken"
           v-model="settings.apiToken"
           type="password"
-          placeholder="Your Jira API token"
+          placeholder="Jira API Token"
         />
+        <a
+          href="https://id.atlassian.com/manage-profile/security/api-tokens"
+          target="_blank"
+          class="help-link"
+        >
+          如何取得 API Token?
+        </a>
       </div>
 
       <div class="field">
@@ -79,8 +86,9 @@ async function handleSave() {
           id="jiraKeyRegex"
           v-model="settings.jiraKeyRegex"
           type="text"
-          placeholder="[A-Z]+-\d+"
+          placeholder="(KQT|KB2CW)-\d+"
         />
+        <span class="hint">支援格式：KQT-123, KB2CW-4567</span>
       </div>
 
       <button type="submit">儲存設定</button>
@@ -135,6 +143,25 @@ input:focus {
   border-color: #0052cc;
 }
 
+.help-link {
+  display: inline-block;
+  margin-top: 4px;
+  font-size: 11px;
+  color: #0052cc;
+  text-decoration: none;
+}
+
+.help-link:hover {
+  text-decoration: underline;
+}
+
+.hint {
+  display: block;
+  margin-top: 4px;
+  font-size: 11px;
+  color: #888;
+}
+
 button {
   width: 100%;
   padding: 10px;
@@ -177,6 +204,10 @@ button:hover {
     color: #e0e0e0;
   }
 
+  .loading {
+    color: #999;
+  }
+
   label {
     color: #b0b0b0;
   }
@@ -187,8 +218,38 @@ button:hover {
     color: #e0e0e0;
   }
 
+  input::placeholder {
+    color: #666;
+  }
+
   input:focus {
     border-color: #4c9aff;
+  }
+
+  .help-link {
+    color: #4c9aff;
+  }
+
+  .hint {
+    color: #888;
+  }
+
+  button {
+    background: #0066ff;
+  }
+
+  button:hover {
+    background: #0055dd;
+  }
+
+  .message.success {
+    background: #1a3a2a;
+    color: #36b37e;
+  }
+
+  .message.error {
+    background: #3a1a1a;
+    color: #ff5630;
   }
 }
 </style>
