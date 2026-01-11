@@ -362,10 +362,10 @@ export function useAutoTracking() {
     }
   })
 
-  // Convert to Jira time format (e.g., "1h 30m")
+  // Convert to Jira time format (e.g., "1h 30m") - seconds are rounded up to minutes
   const jiraTimeFormat = computed(() => {
     const ms = state.value.totalActiveMs
-    const minutes = Math.floor(ms / 60000)
+    const minutes = Math.ceil(ms / 60000) // 無條件進位
     const hours = Math.floor(minutes / 60)
     const remainingMinutes = minutes % 60
 
