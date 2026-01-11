@@ -1,29 +1,37 @@
 {
-    "manifest_version": 3,
-    "name": "GitHub PR to Jira Time Logger",
-    "version": "1.0",
-    "icons": {
-      "16": "icon.png",
-      "48": "icon.png",
-      "128": "icon.png"
-    },
-    "description": "Detect Jira key in GitHub PR and log time via Jira API.",
-    "permissions": ["storage"],
-    "host_permissions": ["https://github.com/*", "https://kkday.atlassian.net/*"],
-    "content_scripts": [
-      {
-        "matches": ["https://github.com/*/pull/*"],
-        "js": ["content.js"]
-      }
-    ],
-    "action": {
-      "default_popup": "popup.html",
-      "default_icon": {
-        "16": "icon.png"
-      },
-      "default_title": "Log time to Jira"
-    },
-    "background": {
-        "service_worker": "background.js"
+  "manifest_version": 3,
+  "name": "GitHub PR to Jira Time Logger",
+  "version": "2.0.0",
+  "icons": {
+    "16": "icon.png",
+    "48": "icon.png",
+    "128": "icon.png"
+  },
+  "description": "Detect Jira key in GitHub PR and log time via Jira API.",
+  "permissions": ["storage"],
+  "host_permissions": [
+    "https://github.com/*",
+    "https://*.atlassian.net/*"
+  ],
+  "content_scripts": [
+    {
+      "matches": ["https://github.com/*/pull/*"],
+      "js": ["src/content/main.ts"]
     }
-  }
+  ],
+  "action": {
+    "default_popup": "src/popup/index.html",
+    "default_icon": { "16": "icon.png" },
+    "default_title": "Log time to Jira"
+  },
+  "background": {
+    "service_worker": "src/background/index.ts",
+    "type": "module"
+  },
+  "web_accessible_resources": [
+    {
+      "resources": ["assets/*"],
+      "matches": ["https://github.com/*"]
+    }
+  ]
+}
