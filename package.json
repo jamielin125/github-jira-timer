@@ -17,6 +17,7 @@
     "@types/chrome": "^0.0.268",
     "@types/node": "^20.11.0",
     "@vitejs/plugin-vue": "^5.0.4",
+    "@vue/test-utils": "^2.4.6",
     "happy-dom": "^13.3.8",
     "typescript": "^5.4.2",
     "vite": "^5.1.6",
