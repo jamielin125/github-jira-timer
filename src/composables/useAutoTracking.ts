@@ -14,11 +14,12 @@ import {
   map
 } from 'rxjs/operators'
 import type { AutoTrackingState, TimeSegment } from '@/types'
-
-const IDLE_TIMEOUT_MS = 60000 // 60 seconds
-const THROTTLE_MS = 1000     // Throttle activity events
-const STORAGE_KEY = 'autoTrackingState'
-const PREFERENCE_KEY = 'autoTrackingPreference' // Toggle preference (persists across PRs)
+import {
+  IDLE_TIMEOUT_MS,
+  THROTTLE_MS,
+  STORAGE_KEY_TRACKING,
+  STORAGE_KEY_PREFERENCE
+} from '@/config'
 
 export function useAutoTracking() {
   const state = ref<AutoTrackingState>({
@@ -57,7 +58,7 @@ export function useAutoTracking() {
         activeSegmentStart: activeSegmentStart,
         jiraKey: storedJiraKey.value
       }
-      await chrome.storage.local.set({ [STORAGE_KEY]: data })
+      await chrome.storage.local.set({ [STORAGE_KEY_TRACKING]: data })
     } catch (error) {
       // Extension context invalidated - ignore
     }
@@ -66,7 +67,7 @@ export function useAutoTracking() {
   // Save toggle preference separately (persists across PRs)
   async function savePreference() {
     try {
-      await chrome.storage.local.set({ [PREFERENCE_KEY]: { enabled: state.value.enabled } })
+      await chrome.storage.local.set({ [STORAGE_KEY_PREFERENCE]: { enabled: state.value.enabled } })
     } catch (error) {
       // Extension context invalidated - ignore
     }
@@ -75,8 +76,8 @@ export function useAutoTracking() {
   // Load toggle preference
   async function loadPreference(): Promise<boolean> {
     try {
-      const saved = await chrome.storage.local.get(PREFERENCE_KEY)
-      return saved[PREFERENCE_KEY]?.enabled ?? false
+      const saved = await chrome.storage.local.get(STORAGE_KEY_PREFERENCE)
+      return saved[STORAGE_KEY_PREFERENCE]?.enabled ?? false
     } catch (error) {
       return false
     }
@@ -85,10 +86,10 @@ export function useAutoTracking() {
   // Load state from storage (returns stored jiraKey for comparison)
   async function loadState(): Promise<string | null> {
     try {
-      const saved = await chrome.storage.local.get(STORAGE_KEY)
+      const saved = await chrome.storage.local.get(STORAGE_KEY_TRACKING)
 
-      if (saved[STORAGE_KEY]) {
-        const data = saved[STORAGE_KEY]
+      if (saved[STORAGE_KEY_TRACKING]) {
+        const data = saved[STORAGE_KEY_TRACKING]
 
         // Convert segments from object to array if needed (Chrome storage issue)
         let segments: TimeSegment[] = []

@@ -6,8 +6,7 @@ import { useSettings } from '@/composables/useStorage'
 import { usePendingSubmissions } from '@/composables/usePendingSubmissions'
 import { isPullRequestPage, extractJiraKey } from '@/utils/github'
 import type { PendingSubmission, AutoTrackingState } from '@/types'
-
-const TRACKING_STORAGE_KEY = 'autoTrackingState'
+import { STORAGE_KEY_TRACKING, MIN_TIME_TO_PROMPT_MS } from '@/config'
 
 const { settings, load } = useSettings()
 const {
@@ -20,9 +19,9 @@ const {
 
 // Read tracking state directly from storage (don't use useAutoTracking to avoid conflicts)
 async function getTrackingState(): Promise<{ jiraKey: string | null; state: AutoTrackingState } | null> {
-  const saved = await chrome.storage.local.get(TRACKING_STORAGE_KEY)
-  if (saved[TRACKING_STORAGE_KEY]) {
-    const data = saved[TRACKING_STORAGE_KEY]
+  const saved = await chrome.storage.local.get(STORAGE_KEY_TRACKING)
+  if (saved[STORAGE_KEY_TRACKING]) {
+    const data = saved[STORAGE_KEY_TRACKING]
     return {
       jiraKey: data.jiraKey || null,
       state: {
@@ -38,7 +37,7 @@ async function getTrackingState(): Promise<{ jiraKey: string | null; state: Auto
 
 // Clear tracking state in storage
 async function clearTrackingState() {
-  await chrome.storage.local.remove(TRACKING_STORAGE_KEY)
+  await chrome.storage.local.remove(STORAGE_KEY_TRACKING)
 }
 
 const jiraKey = ref<string | null>(null)
@@ -91,11 +90,10 @@ async function checkPage() {
       }
 
       // Check for pending submissions from other PRs
-      // Only show modal if at least one item has >= 30 seconds (avoid prompting for quick PR checks)
-      const MIN_TIME_TO_PROMPT = 30000 // 30 seconds
+      // Only show modal if at least one item has >= MIN_TIME_TO_PROMPT_MS (avoid prompting for quick PR checks)
       await loadPending() // Reload to get latest pending (also cleans up expired entries)
       const otherPending = getOtherPending(key)
-      const significantPending = otherPending.filter(p => p.totalActiveMs >= MIN_TIME_TO_PROMPT)
+      const significantPending = otherPending.filter(p => p.totalActiveMs >= MIN_TIME_TO_PROMPT_MS)
 
       if (significantPending.length > 0) {
         pendingItems.value = significantPending
@@ -161,9 +159,9 @@ async function handleDeletePending(items: PendingSubmission[]) {
 // Handle page unload - save pending before leaving
 function handleBeforeUnload() {
   // Read tracking state from storage and save as pending if needed
-  chrome.storage.local.get(TRACKING_STORAGE_KEY).then(saved => {
-    if (saved[TRACKING_STORAGE_KEY]) {
-      const data = saved[TRACKING_STORAGE_KEY]
+  chrome.storage.local.get(STORAGE_KEY_TRACKING).then(saved => {
+    if (saved[STORAGE_KEY_TRACKING]) {
+      const data = saved[STORAGE_KEY_TRACKING]
       const trackingJiraKey = data.jiraKey
       const totalActiveMs = data.totalActiveMs || 0
       const segments = Array.isArray(data.segments) ? data.segments : []

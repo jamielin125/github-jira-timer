@@ -1,9 +1,9 @@
 import { ref, computed } from 'vue'
 import type { PendingSubmission, PendingSubmissions, TimeSegment } from '@/types'
-
-const STORAGE_KEY = 'pendingSubmissions'
-const EXPIRY_DAYS = 3
-const EXPIRY_MS = EXPIRY_DAYS * 24 * 60 * 60 * 1000 // 3 days in ms
+import {
+  STORAGE_KEY_PENDING,
+  PENDING_EXPIRY_MS
+} from '@/config'
 
 export function usePendingSubmissions() {
   const pending = ref<PendingSubmissions>({})
@@ -11,21 +11,21 @@ export function usePendingSubmissions() {
 
   // Load from storage and cleanup expired entries
   async function load() {
-    const saved = await chrome.storage.local.get(STORAGE_KEY)
-    if (saved[STORAGE_KEY]) {
-      pending.value = saved[STORAGE_KEY]
+    const saved = await chrome.storage.local.get(STORAGE_KEY_PENDING)
+    if (saved[STORAGE_KEY_PENDING]) {
+      pending.value = saved[STORAGE_KEY_PENDING]
       await cleanupExpired()
     }
     loaded.value = true
   }
 
-  // Remove entries older than EXPIRY_DAYS
+  // Remove entries older than PENDING_EXPIRY_DAYS
   async function cleanupExpired() {
     const now = Date.now()
     let hasExpired = false
 
     for (const key of Object.keys(pending.value)) {
-      if (now - pending.value[key].lastUpdated > EXPIRY_MS) {
+      if (now - pending.value[key].lastUpdated > PENDING_EXPIRY_MS) {
         delete pending.value[key]
         hasExpired = true
       }
@@ -38,7 +38,7 @@ export function usePendingSubmissions() {
 
   // Save to storage
   async function save() {
-    await chrome.storage.local.set({ [STORAGE_KEY]: pending.value })
+    await chrome.storage.local.set({ [STORAGE_KEY_PENDING]: pending.value })
   }
 
   // Add or update pending submission (accumulates time)
