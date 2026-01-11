@@ -2,18 +2,38 @@ import { ref, computed } from 'vue'
 import type { PendingSubmission, PendingSubmissions, TimeSegment } from '@/types'
 
 const STORAGE_KEY = 'pendingSubmissions'
+const EXPIRY_DAYS = 3
+const EXPIRY_MS = EXPIRY_DAYS * 24 * 60 * 60 * 1000 // 3 days in ms
 
 export function usePendingSubmissions() {
   const pending = ref<PendingSubmissions>({})
   const loaded = ref(false)
 
-  // Load from storage
+  // Load from storage and cleanup expired entries
   async function load() {
     const saved = await chrome.storage.local.get(STORAGE_KEY)
     if (saved[STORAGE_KEY]) {
       pending.value = saved[STORAGE_KEY]
+      await cleanupExpired()
     }
     loaded.value = true
+  }
+
+  // Remove entries older than EXPIRY_DAYS
+  async function cleanupExpired() {
+    const now = Date.now()
+    let hasExpired = false
+
+    for (const key of Object.keys(pending.value)) {
+      if (now - pending.value[key].lastUpdated > EXPIRY_MS) {
+        delete pending.value[key]
+        hasExpired = true
+      }
+    }
+
+    if (hasExpired) {
+      await save()
+    }
   }
 
   // Save to storage
@@ -21,7 +41,7 @@ export function usePendingSubmissions() {
     await chrome.storage.local.set({ [STORAGE_KEY]: pending.value })
   }
 
-  // Add or update pending submission
+  // Add or update pending submission (accumulates time)
   async function setPending(
     jiraKey: string,
     totalActiveMs: number,
@@ -32,11 +52,22 @@ export function usePendingSubmissions() {
       return
     }
 
-    pending.value[jiraKey] = {
-      jiraKey,
-      totalActiveMs,
-      segments,
-      lastUpdated: Date.now()
+    const existing = pending.value[jiraKey]
+    if (existing) {
+      // Accumulate time and merge segments
+      pending.value[jiraKey] = {
+        jiraKey,
+        totalActiveMs: existing.totalActiveMs + totalActiveMs,
+        segments: [...existing.segments, ...segments],
+        lastUpdated: Date.now()
+      }
+    } else {
+      pending.value[jiraKey] = {
+        jiraKey,
+        totalActiveMs,
+        segments,
+        lastUpdated: Date.now()
+      }
     }
     await save()
   }

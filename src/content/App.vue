@@ -91,10 +91,14 @@ async function checkPage() {
       }
 
       // Check for pending submissions from other PRs
-      await loadPending() // Reload to get latest pending after potential save above
+      // Only show modal if at least one item has >= 30 seconds (avoid prompting for quick PR checks)
+      const MIN_TIME_TO_PROMPT = 30000 // 30 seconds
+      await loadPending() // Reload to get latest pending (also cleans up expired entries)
       const otherPending = getOtherPending(key)
-      if (otherPending.length > 0) {
-        pendingItems.value = otherPending
+      const significantPending = otherPending.filter(p => p.totalActiveMs >= MIN_TIME_TO_PROMPT)
+
+      if (significantPending.length > 0) {
+        pendingItems.value = significantPending
         showPendingModal.value = true
       }
     }

@@ -57,12 +57,14 @@ describe('usePendingSubmissions', () => {
       expect(chrome.storage.local.set).toHaveBeenCalled()
     })
 
-    it('should update an existing pending submission', async () => {
+    it('should accumulate time for existing pending submission', async () => {
+      const existingSegments = [{ start: 0, end: 60000, type: 'active' as const }]
+      const newSegments = [{ start: 100000, end: 220000, type: 'active' as const }]
       const existingPending: Record<string, PendingSubmission> = {
         'JIRA-123': {
           jiraKey: 'JIRA-123',
           totalActiveMs: 60000,
-          segments: [],
+          segments: existingSegments,
           lastUpdated: Date.now() - 10000
         }
       }
@@ -72,9 +74,12 @@ describe('usePendingSubmissions', () => {
       const { setPending, pending, load } = usePendingSubmissions()
       await load()
 
-      await setPending('JIRA-123', 120000, [])
+      await setPending('JIRA-123', 120000, newSegments)
 
-      expect(pending.value['JIRA-123'].totalActiveMs).toBe(120000)
+      // Time should accumulate: 60000 + 120000 = 180000
+      expect(pending.value['JIRA-123'].totalActiveMs).toBe(180000)
+      // Segments should merge
+      expect(pending.value['JIRA-123'].segments).toEqual([...existingSegments, ...newSegments])
     })
 
     it('should skip if totalActiveMs is 0', async () => {
