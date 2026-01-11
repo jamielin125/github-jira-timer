@@ -11,12 +11,10 @@ const props = defineProps<{
 const expanded = ref(false)
 const hoveredSegment = ref<TimeSegment | null>(null)
 
-// Calculate total duration for percentage calculation
+// Calculate total duration for percentage calculation (sum of all segments)
 const totalDuration = computed(() => {
   if (props.segments.length === 0) return 0
-  const first = props.segments[0].start
-  const last = props.segments[props.segments.length - 1].end
-  return last - first
+  return props.segments.reduce((sum, segment) => sum + (segment.end - segment.start), 0)
 })
 
 // Calculate segment width as percentage
